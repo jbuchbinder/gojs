@@ -14,7 +14,7 @@ type Context struct {
 type GlobalContext Context
 
 func NewContext() *Context {
-	const c_nil = unsafe.Pointer(uintptr(0))
+	c_nil := unsafe.Pointer(uintptr(0))
 
 	ctx := new(Context)
 
