@@ -345,7 +345,7 @@ func docall(ctx *Context, val reflect.Value, argumentCount uint, arguments unsaf
 }
 
 //export nativefunction_CallAsFunction_go
-func nativefunction_CallAsFunction_go(data_ptr unsafe.Pointer, rawCtx C.JSContextRef, _ unsafe.Pointer, _ unsafe.Pointer, argumentCount uint, arguments unsafe.Pointer, exception *C.JSValueRef) unsafe.Pointer {
+func nativefunction_CallAsFunction_go(data_ptr unsafe.Pointer, rawCtx C.JSContextRef, ignore1 unsafe.Pointer, ignore2 unsafe.Pointer, argumentCount uint, arguments unsafe.Pointer, exception *C.JSValueRef) unsafe.Pointer {
 	ctx := NewContextFrom(RawContext(rawCtx))
 	defer func() {
 		if r := recover(); r != nil {
