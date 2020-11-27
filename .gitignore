@@ -5,3 +5,4 @@ _*
 8.out
 .kateproject.d
 *.kate-swp
+go.sum
