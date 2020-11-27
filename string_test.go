@@ -64,13 +64,13 @@ func TestStringEqual(t *testing.T) {
 			t.Errorf("Strings compared as equal \"%v\", and \"%v\"", str, lhs)
 		}
 		if !str.Equal(str) {
-			t.Errorf("String did not compared as equal to itself \"%v\", and \"%v\"", str)
+			t.Errorf("String did not compared as equal to itself \"%v\", and \"%v\"", str, str)
 		}
 
 		str2 := NewString(item)
 		defer str2.Release()
 		if !str.Equal(str2) {
-			t.Errorf("String did not compared as equal to itself \"%v\", and \"%v\"", str2)
+			t.Errorf("String did not compared as equal to itself \"%v\", and \"%v\"", str2, str2)
 		}
 	}
 }

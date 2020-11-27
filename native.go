@@ -239,16 +239,26 @@ func setNativeFieldFromJSValue(field reflect.Value, ctx *Context, value *Value) 
 // Finalizer from JavaScriptCore for all native objects
 //---------------------------------------------------------
 
-func register(data *object_data) {
+func register(data *object_data) unsafe.Pointer {
 	id := uintptr(unsafe.Pointer(data))
 	objects[id] = data
+	return unsafe.Pointer(&id)
+}
+
+func getobject(uid unsafe.Pointer) *object_data {
+	id := (*uintptr)(uid)
+	if data, ok := objects[*id]; ok {
+		return data
+	}
+	log.Println("No object registered for callback with id", id)
+	return nil
 }
 
 //export finalize_go
 func finalize_go(data unsafe.Pointer) {
 	// Called from JavaScriptCore finalizer methods
-	id := uintptr(data)
-	delete(objects, id)
+	id := (*uintptr)(data)
+	delete(objects, *id)
 }
 
 //=========================================================
@@ -263,9 +273,9 @@ func (ctx *Context) NewFunctionWithCallback(callback GoFunctionCallback) *Object
 		reflect.TypeOf(callback),
 		reflect.ValueOf(callback),
 		0}
-	register(data)
+	ptr := register(data)
 
-	ret := C.JSObjectMake(ctx.ref, nativecallback, unsafe.Pointer(data))
+	ret := C.JSObjectMake(ctx.ref, nativecallback, ptr)
 	return ctx.newObject(ret)
 }
 
@@ -278,7 +288,7 @@ func nativecallback_CallAsFunction_go(data_ptr unsafe.Pointer, rawCtx C.JSContex
 		}
 	}()
 
-	data := (*object_data)(data_ptr)
+	data := getobject(data_ptr)
 	ret := data.val.Interface().(GoFunctionCallback)(
 		ctx, ctx.newObject(function), ctx.newObject(thisObject), ctx.newGoValueArray(arguments, argumentCount) /*(*[1 << 14]*Value)(arguments)[0:argumentCount]*/)
 	if ret == nil {
@@ -302,9 +312,9 @@ func (ctx *Context) NewFunctionWithNative(fn interface{}) *Object {
 		reflect.TypeOf(fn),
 		reflect.ValueOf(fn),
 		0}
-	register(data)
+	ptr := register(data)
 
-	ret := C.JSObjectMake(ctx.ref, nativefunction, unsafe.Pointer(data))
+	ret := C.JSObjectMake(ctx.ref, nativefunction, ptr)
 	return ctx.newObject(ret)
 }
 
@@ -344,7 +354,7 @@ func nativefunction_CallAsFunction_go(data_ptr unsafe.Pointer, rawCtx C.JSContex
 	}()
 
 	// recover the object
-	data := (*object_data)(data_ptr)
+	data := getobject(data_ptr)
 	typ := data.typ
 	val := data.val
 
@@ -374,9 +384,9 @@ func (ctx *Context) NewNativeObject(obj interface{}) *Object {
 		reflect.TypeOf(obj),
 		reflect.ValueOf(obj),
 		0}
-	register(data)
+	ptr := register(data)
 
-	ret := C.JSObjectMake(ctx.ref, nativeobject, unsafe.Pointer(data))
+	ret := C.JSObjectMake(ctx.ref, nativeobject, ptr)
 	return ctx.newObject(ret)
 }
 
@@ -387,7 +397,7 @@ func nativeobject_GetProperty_go(data_ptr, uctx, _, propertyName unsafe.Pointer,
 	name := (*String)(propertyName).String()
 
 	// Reconstruct the object interface
-	data := (*object_data)(data_ptr)
+	data := getobject(data_ptr)
 
 	// Drill down through reflect to find the property
 	val := data.val
@@ -425,7 +435,7 @@ func nativeobject_SetProperty_go(data_ptr unsafe.Pointer, rawCtx C.JSContextRef,
 	name := newStringFromRef(propertyName).String()
 
 	// Reconstruct the object interface
-	data := (*object_data)(data_ptr)
+	data := getobject(data_ptr)
 
 	// Drill down through reflect to find the property
 	val := data.val
@@ -454,7 +464,7 @@ func nativeobject_SetProperty_go(data_ptr unsafe.Pointer, rawCtx C.JSContextRef,
 //export nativeobject_ConvertToString_go
 func nativeobject_ConvertToString_go(data_ptr, ctx, obj unsafe.Pointer) unsafe.Pointer {
 	// Reconstruct the object interface
-	data := (*object_data)(data_ptr)
+	data := getobject(data_ptr)
 
 	// Can we get a string?
 	if stringer, ok := data.val.Interface().(Stringer); ok {
@@ -475,9 +485,9 @@ func newNativeMethod(ctx *Context, obj *object_data, method int) *Object {
 		obj.typ,
 		obj.val,
 		method}
-	register(data)
+	ptr := register(data)
 
-	ret := C.JSObjectMake(ctx.ref, nativemethod, unsafe.Pointer(data))
+	ret := C.JSObjectMake(ctx.ref, nativemethod, ptr)
 	return ctx.newObject(ret)
 }
 
@@ -491,7 +501,7 @@ func nativemethod_CallAsFunction_go(data_ptr unsafe.Pointer, rawCtx C.JSContextR
 	}()
 
 	// Reconstruct the object interface
-	data := (*object_data)(data_ptr)
+	data := getobject(data_ptr)
 
 	// Get the method
 	method := data.val.Method(data.method)

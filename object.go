@@ -6,7 +6,6 @@ package gojs
 // #include "callback.h"
 import "C"
 import "unsafe"
-import "log"
 
 type Object struct {
 	ref C.JSObjectRef
@@ -274,7 +273,6 @@ func (ctx *Context) CallAsFunction(obj *Object, thisObject *Object, parameters [
 	cParameters, n := ctx.newCValueArray(parameters)
 	if thisObject == nil {
 		thisObject = ctx.newObject(nil)
-		log.Println(thisObject.ref)
 	}
 
 	ret := C.JSObjectCallAsFunction(ctx.ref, obj.ref, thisObject.ref, n, cParameters, &errVal.ref)

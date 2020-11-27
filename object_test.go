@@ -59,7 +59,7 @@ func TestNewArray2(t *testing.T) {
 			t.Errorf("ctx.NewArray return object with 'length' property not a number")
 		}
 		if ctx.ToNumberOrDie(prop) != 2 {
-			t.Errorf("ctx.NewArray return object with 'length' not equal to 2", ctx.ToNumberOrDie(prop))
+			t.Errorf("ctx.NewArray return object with 'length' not equal to 2: %v", ctx.ToNumberOrDie(prop))
 		}
 	}
 }
